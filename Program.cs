@@ -773,5 +773,28 @@ namespace NexoTestApp
             }
             return new Dictionary<string, Dictionary<string, string>>();
         }
+        static void AddZK()
+        {
+            Console.WriteLine("Podaj NIP klienta // docelowo podawane będzie IDKlienta//: ");
+            string nip = Console.ReadLine();
+            Console.WriteLine("Podaj ilość produktów w zamówieniu");
+            string numberOfProducts = Console.ReadLine();
+            int numberOfProductsInt;
+            if(!Int32.TryParse(numberOfProducts, out numberOfProductsInt))
+            {
+                numberOfProductsInt = 1;
+            }
+            List<string> listaProduktow = new List<string>();
+            for (int i = 0; i < numberOfProductsInt; i++)
+            {
+                Console.WriteLine("Podaj kod produktu:");
+                listaProduktow.Add(Console.ReadLine());
+
+            }
+            string commentarz;
+            Console.WriteLine("Komentarz // docelowo będzie to numer zlecenia z dinara");
+            commentarz = Console.ReadLine();
+            // DodajZamowienie(nip, listaProduktow, commentarz);
+        }
     }
 }
