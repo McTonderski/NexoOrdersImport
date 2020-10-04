@@ -233,6 +233,9 @@ namespace NexoTestApp
             "WHERE ETL_RunID > " + last_ETL_runId +
             "ORDER BY ETL_RunId desc";
 
+        static string query_id_zamowienia = "SELECT [RecordSource], [Id] FROM [Dinar].[raw].[LinkZamowienieKlient] where [ZamowienieIdHashKey] = '";
+        static string time_in_minutes = "15";
+
         static void Main(string[] args)
         {   // Here program opens file containing last run time and checks how many minutes elapsed since last run. 
             // Program than is going to collect orders that were placed since the last check.
@@ -797,6 +800,7 @@ namespace NexoTestApp
             commentarz = Console.ReadLine();
             // DodajZamowienie(nip, listaProduktow, commentarz);
         }
+
         public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatZamowienieKlientDane()
         {
             //set the connection string
