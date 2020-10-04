@@ -797,5 +797,424 @@ namespace NexoTestApp
             commentarz = Console.ReadLine();
             // DodajZamowienie(nip, listaProduktow, commentarz);
         }
+        public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatZamowienieKlientDane()
+        {
+            //set the connection string
+            string connString = conn_string;
+            
+
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_zamowienie_klient_dane, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+
+                    string ZamowienieIdHashKey;
+                    string RecordSource;
+                    string imie;
+                    string nazwisko;
+                    string zam_osoba;
+                    string telefon; 
+                    string fax; 
+                    string mail; 
+                    string ZamowienieKlientDaneHashDiff;
+
+                    Dictionary<string, Dictionary<string, string>> temp = new Dictionary<string, Dictionary<string, string>>();
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr[0] as string ?? default(string);
+                            RecordSource = dr[4] as string ?? default(string);
+                            imie = dr[5] as string ?? default(string);
+                            nazwisko = dr[6] as string ?? default(string);
+                            zam_osoba = dr[7] as string ?? default(string);
+                            telefon = dr[8] as string ?? default(string);
+                            fax = dr[9] as string ?? default(string);
+                            mail = dr[10] as string ?? default(string);
+                            ZamowienieKlientDaneHashDiff = dr[13] as string ?? default(string);
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["imie"] = imie;
+                            tempin["nazwisko"] = nazwisko;
+                            tempin["zam_osoba"] = zam_osoba;
+                            tempin["telefon"] = telefon;
+                            tempin["fax"] = fax;
+                            tempin["mail"] = mail;
+                            tempin["ZamowienieKlientDaneHashDiff"] = ZamowienieKlientDaneHashDiff;
+
+                            temp[ZamowienieIdHashKey] = tempin;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatZamowienieKlientAdres()
+        {
+            //set the connection string
+            string connString = conn_string;
+            
+
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_adresy, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...ZamowienieKlientAdres" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string ZamowienieIdHashKey, RecordSource, adres, adres2, kod, miasto, kraj, imie,nazwisko,firma, ZamowienieKlientAdresHashDiff;
+                    int ETL_RunId;
+                    Dictionary<string, Dictionary<string, string>> temp = new Dictionary<string, Dictionary<string, string>>();
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr[0] as string ?? default(string);
+                            ETL_RunId = dr.GetInt32(1);
+                            RecordSource = dr[4] as string ?? default(string);
+                            adres = dr[5] as string ?? default(string);
+                            adres2 = dr[6] as string ?? default(string);
+                            kod = dr[7] as string ?? default(string);
+                            miasto = dr[8] as string ?? default(string);
+                            kraj = dr[9] as string ?? default(string);
+                            imie = dr[10] as string ?? default(string);
+                            nazwisko = dr[11] as string ?? default(string);
+                            firma = dr[12] as string ?? default(string);
+                            ZamowienieKlientAdresHashDiff = dr.GetString(13);
+
+                            Dictionary<string, string> tempin = new Dictionary<string, string>
+                            {
+                                ["ETL_RunId"] = ETL_RunId.ToString(),
+                                ["RecordSource"] = RecordSource,
+                                ["adres"] = adres,
+                                ["adres2"] = adres2,
+                                ["kod"] = kod,
+                                ["miasto"] = miasto,
+                                ["kraj"] = kraj,
+                                ["imie"] = imie,
+                                ["nazwisko"] = nazwisko,
+                                ["firma"] = firma,
+                                ["ZamowienieKlientAdresHashDiff"] = ZamowienieKlientAdresHashDiff
+                            };
+
+                            temp[ZamowienieIdHashKey] = tempin;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatZamowienieDane()
+        {
+            //set the connection string
+            string connString = conn_string;
+            
+
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_SatZamowienieDane, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...ZamowienieDane" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+                    decimal suma;
+                    string ZamowienieIdHashKey, RecordSource, data, platnosc, uwagi, koszt_przesylki, dostawa, koszt_przesylki_netto, ZamowienieDaneHashDiff;
+                    
+                    Dictionary<string, Dictionary<string, string>> temp = new Dictionary<string, Dictionary<string, string>>();
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr[0] as string ?? default(string);
+                            RecordSource = dr[4] as string ?? default(string);
+                            data = dr[5] as string ?? default(string);
+                            platnosc = dr[7] as string ?? default(string);
+                            uwagi = dr[8] as string ?? default(string);
+                            suma = dr.GetDecimal(10) as decimal? ?? default(decimal);
+                            koszt_przesylki = dr[12] as string ?? default(string);
+                            dostawa = dr[13] as string ?? default(string);
+                            koszt_przesylki_netto = dr[16] as string ?? default(string);
+                            ZamowienieDaneHashDiff = dr[18] as string ?? default(string);
+
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+                            
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["data"] = data;
+                            tempin["platnosc"] = platnosc;
+                            tempin["uwagi"] = uwagi;
+                            tempin["suma"] = suma.ToString();
+                            tempin["koszt_przesylki"] = koszt_przesylki.ToString();
+                            tempin["dostawa"] = dostawa;
+                            tempin["koszt_przesylki_vat"] = koszt_przesylki_netto.ToString();
+                            tempin["ZamowienieDaneHashDiff"] = ZamowienieDaneHashDiff;
+
+                            temp[ZamowienieIdHashKey] = tempin;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        public static Dictionary<string, Dictionary<string, List<string>>> PolaczZBazaLinkPozycjaZamowienieOpakowanie()
+        {
+            string connString = conn_string;
+
+            //variables to store the query results
+            string PozycjaZamowienieOpakowanieHashKey, PozycjaIdHashKey, ZamowienieIdHashKey, OpakowanieIdHashKey, RecordSource;
+            int ETL_RunId, Id, id_zamowienie, id_opakowanie, ServerId;
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_get_pozycja_zamowienie_opakowanie, conn);
+
+                    //open connection
+                    conn.Open();
+                    // Console.WriteLine("\nRetrieving data from Database...LinkPozycjaZamowienieOpakowanie \n");
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    Dictionary<string, Dictionary<string, List<string>>> temp = new Dictionary<string, Dictionary<string, List<string>>>();
+
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            PozycjaZamowienieOpakowanieHashKey = dr[0] as string ?? default(string);
+                            PozycjaIdHashKey = dr[1] as string ?? default(string);
+                            ZamowienieIdHashKey = dr[2] as string ?? default(string);
+                            OpakowanieIdHashKey = dr[3] as string ?? default(string);
+                            ETL_RunId = dr.GetInt32(5);
+                            RecordSource = dr[6] as string ?? default(string);
+                            ServerId = dr.GetInt32(7);
+                            Id = dr.GetInt32(8);
+                            id_zamowienie = dr.GetInt32(9);
+                            id_opakowanie = dr.GetInt32(10);
+                            if(temp.ContainsKey(ZamowienieIdHashKey))
+                            {
+                                temp[ZamowienieIdHashKey]["PozycjaIdHashKey"].Add(PozycjaIdHashKey);
+                                temp[ZamowienieIdHashKey]["OpakowanieIdHashKey"].Add(OpakowanieIdHashKey);
+                            }
+                            else
+                            {
+                                temp[ZamowienieIdHashKey] = new Dictionary<string, List<string>>();
+                                if (temp[ZamowienieIdHashKey].ContainsKey("PozycjaIdHashKey"))
+                                {
+                                    temp[ZamowienieIdHashKey]["PozycjaIdHashKey"].Add(PozycjaIdHashKey);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["PozycjaIdHashKey"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["PozycjaIdHashKey"].Add(PozycjaIdHashKey);
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("OpakowanieIdHashKey"))
+                                {
+                                    temp[ZamowienieIdHashKey]["OpakowanieIdHashKey"].Add(OpakowanieIdHashKey);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["OpakowanieIdHashKey"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["OpakowanieIdHashKey"].Add(OpakowanieIdHashKey);
+                                }
+
+                                
+                            }
+                            
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    // Console.WriteLine("Retrieving Data OK...");
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+
+            return new Dictionary<string, Dictionary<string, List<string>>>();
+
+        }
+
+        public static Dictionary<string, string> PolaczZBazaLinkZamowienieKlient()
+        {
+            //set the connection string
+            string connString = conn_string;
+
+            //variables to store the query results
+
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_get_orders, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...LinkZamowienieKlient" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string ZamowienieIdHashKey, KlientIdHashKey, mail, RecordSource;
+                    int ETL_RunId, ServerId, Id, id_klienta;
+
+                    Dictionary<string, string> temp = new Dictionary<string, string>();
+
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr.GetString(1);
+                            KlientIdHashKey = dr.GetString(2);
+                            ETL_RunId = dr.GetInt32(3);
+                            RecordSource = dr.GetString(4);
+                            ServerId = dr.GetInt32(5);
+                            Id = dr.GetInt32(6);
+                            id_klienta = dr.GetInt32(7);
+                            mail = dr.GetString(8);
+
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+
+                            tempin["ZamowienieKlientHashKey"] = ZamowienieIdHashKey;
+                            tempin["KlientIdHashKey"] = KlientIdHashKey;
+                            tempin["ETL_RunId"] = ETL_RunId.ToString();
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["ServerId"] = ServerId.ToString();
+                            tempin["Id"] = Id.ToString();
+                            tempin["id_klienta"] = id_klienta.ToString();
+                            tempin["mail"] = mail;
+                            temp[ZamowienieIdHashKey] = KlientIdHashKey;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+            return new Dictionary<string, string>();
+        }
     }
 }
