@@ -773,6 +773,7 @@ namespace NexoTestApp
             }
             return new Dictionary<string, Dictionary<string, string>>();
         }
+
         static void AddZK()
         {
             Console.WriteLine("Podaj NIP klienta // docelowo podawane będzie IDKlienta//: ");
