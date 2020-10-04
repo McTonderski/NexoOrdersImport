@@ -1,4 +1,4 @@
-using InsERT.Moria.Asortymenty;
+﻿using InsERT.Moria.Asortymenty;
 using InsERT.Moria.Dokumenty.Logistyka;
 using InsERT.Moria.Klienci;
 using InsERT.Moria.ModelDanych;
