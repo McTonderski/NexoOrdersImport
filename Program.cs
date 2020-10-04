@@ -1216,5 +1216,558 @@ namespace NexoTestApp
             }
             return new Dictionary<string, string>();
         }
+
+
+        public static Uchwyt UruchomSfere()
+        {
+            DanePolaczenia danePolaczenia = DanePolaczenia.Jawne("SERWER", "DB", true);
+            try
+            {
+                MenedzerPolaczen mp = new MenedzerPolaczen();
+                Uchwyt sfera = mp.Polacz(danePolaczenia, ProductId.Subiekt);
+                if (!sfera.ZalogujOperatora("USER", "PASSWORD"))
+                    throw new ArgumentException("Nie udało się zalogować");
+                return sfera;
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            return null;
+        }
+        public static void getZgodyMatkeringowe()
+        {
+            //set the connection string
+            string connString = conn_string;
+
+            //variables to store the query results
+
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_get_orders, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...LinkZamowienieKlient" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string ZamowienieIdHashKey, KlientIdHashKey, mail, RecordSource;
+                    int ETL_RunId, ServerId, Id, id_klienta;
+
+                    Dictionary<string, string> temp = new Dictionary<string, string>();
+
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr.GetString(1);
+                            KlientIdHashKey = dr.GetString(2);
+                            ETL_RunId = dr.GetInt32(3);
+                            RecordSource = dr.GetString(4);
+                            ServerId = dr.GetInt32(5);
+                            Id = dr.GetInt32(6);
+                            id_klienta = dr.GetInt32(7);
+                            mail = dr.GetString(8);
+
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+
+                            tempin["ZamowienieKlientHashKey"] = ZamowienieIdHashKey;
+                            tempin["KlientIdHashKey"] = KlientIdHashKey;
+                            tempin["ETL_RunId"] = ETL_RunId.ToString();
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["ServerId"] = ServerId.ToString();
+                            tempin["Id"] = Id.ToString();
+                            tempin["id_klienta"] = id_klienta.ToString();
+                            tempin["mail"] = mail;
+                            temp[ZamowienieIdHashKey] = KlientIdHashKey;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+
+                    //return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+            //return new Dictionary<string, string>();
+        }
+
+        public static void ZgodyMarketingowe()
+        {
+            List<string> nazwyZgod = new List<string>();
+            nazwyZgod.Add("ZNOIPPKE"); // Otryzmywanie informacji przy pomocy komunikacji elektronicznej
+            nazwyZgod.Add("ZNONV"); // otrzymanie newslettera  vendero - nowości
+            nazwyZgod.Add("ZNPDO"); // Przetwarzanie Danych osobowych - 
+            nazwyZgod.Add("ZNPDWCM"); // Przetwarzanie danych w celach marketingowych - profilowanie 
+         
+            // https://forum.insert.com.pl/index.php?/topic/12895-cele-przetwarzania-a-sfera/&tab=comments#comment-85363
+            IObiektyBibliotekiDokumentow biblioteka = sfera.PodajObiektTypu<IObiektyBibliotekiDokumentow>();
+            IPodmioty podmioty = sfera.PodajObiektTypu<IPodmioty>();
+            ICelePrzetwarzania cele = sfera.PodajObiektTypu<ICelePrzetwarzania>();
+            var podmitoDoEdycji = podmioty.Dane.Wszystkie().Where(p => p.Id == pid).FirstOrDefault();                	
+   
+            if(podmitoDoEdycji == null) {}
+            else
+                {                  
+                using (IPodmiot podmiot = podmioty.Znajdz(podmitoDoEdycji))
+                {
+                // ustawienie zgody na określony cel
+  	            var cel1 = cele.Dane.Wszystkie().Where(c => c.NazwaSkrocona == "ZNPDO").FirstOrDefault();
+  	            var zgoda1 = podmiot.Dane.Zgody.Where(z => z.CelPrzetwarzaniaId == cel1.Id).FirstOrDefault();
+                if(zgoda1==null)
+  	                {
+  	                zgoda1 = new Zgoda();
+	                podmiot.Dane.Zgody.Add(zgoda1);
+                    zgoda1.CelPrzetwarzania = cel1;
+  	                }    
+  	            zgoda1.Status = 2;
+                podmiot.Zapisz();  
+                }
+            }
+        }
+        
+        public static void DodajZamowienie(Dictionary<string, List<string>> Pozycje, Dictionary<string, string> Adres, Dictionary<string, string> Dane, String uwagi, String NIP = null, string firma_nazwa = null, Dictionary<string, string> Firma = null, String dostawa = null, String kosztDostawy = null, string source = null)
+        {
+            // Launching Sfera
+            using (var sfera = UruchomSfere())
+            {
+                //Declaration of variables used by sfera to create ZK
+                IAsortymenty asortyment = sfera.PodajObiektTypu<IAsortymenty>();
+                IJednostkiMiar jednostkiMiary = sfera.PodajObiektTypu<IJednostkiMiar>();
+                IPodmioty podmioty = sfera.PodajObiektTypu<IPodmioty>();
+                // Default ZK configuration 
+                Konfiguracja konfZk = sfera.PodajObiektTypu<IKonfiguracje>().DaneDomyslne.ZamowienieOdKlienta;
+                Console.WriteLine("Sfera is runnin");
+
+                Magazyn mag = sfera.PodajObiektTypu<IMagazyny>().Dane.Wszystkie().Where(m => m.Symbol == "MAG").FirstOrDefault();
+
+                IZamowieniaOdKlientow zamowienia = sfera.PodajObiektTypu<IZamowieniaOdKlientow>();
+                // Creating ZK document
+                using (IZamowienieOdKlienta zk = zamowienia.Utworz(konfZk))
+                {
+                    // Declare zk Magazine
+                    zk.Dane.Magazyn = mag;
+                    // try for creating object of the customer and filling in data.
+                    try
+                    {
+                        // Checking if customer is a company
+                        if(NIP == null)
+                        {
+                            // Filling in customer details to check if already exists
+                            var imie = Dane["imie"];
+                            var nazwisko = Dane["nazwisko"];
+                            var klient = podmioty.Dane.Wszystkie().Where(p => p.Osoba.Imie == imie && p.Osoba.Nazwisko == nazwisko).FirstOrDefault();
+                            // If no client in database found then create one.
+                            if (klient == null)
+                            {
+                                IPodmioty pod = sfera.PodajObiektTypu<IPodmioty>();
+                                IPanstwa panstwa = sfera.PodajObiektTypu<IPanstwa>();
+                                IRodzajeKontaktuDaneDomyslne rodzajeKontaktuDD = sfera.PodajObiektTypu<IRodzajeKontaktu>().DaneDomyslne;
+                                IStanowiskaDaneDomyslne stanowiskaDD = sfera.PodajObiektTypu<IStanowiska>().DaneDomyslne;
+                                IDzialyPodmiotuDaneDomyslne dzialyDD = sfera.PodajObiektTypu<IDzialyPodmiotu>().DaneDomyslne;
+
+                                ITypyAdresowDaneDomyslne typyAdresuDD = sfera.PodajObiektTypu<ITypyAdresu>().DaneDomyslne;
+
+                                Podmiot przedstawiciel = null;
+                                using (IPodmiot przedstawicielBO = pod.UtworzOsobe())
+                                {
+                                    przedstawicielBO.Dane.Osoba.Imie = imie;
+                                    przedstawicielBO.Dane.Osoba.Nazwisko = nazwisko;
+                                    int id = podmioty.Dane.Wszystkie().Select(a => a.Id).Max() + 1;
+                                    przedstawicielBO.Dane.Sygnatura.PelnaSygnatura = "KLIENT" + id.ToString();
+
+                                    Kontakt kontakt = new Kontakt();
+                                    przedstawicielBO.Dane.Kontakty.Add(kontakt);
+                                    kontakt.Rodzaj = rodzajeKontaktuDD.Telefon;
+                                    kontakt.Wartosc = Dane["telefon"].ToString();
+                                    kontakt.Podstawowy = true;
+                                        
+                                    Kontakt kontakt2 = new Kontakt();
+                                    przedstawicielBO.Dane.Kontakty.Add(kontakt2);
+                                    kontakt2.Rodzaj = rodzajeKontaktuDD.Email;
+                                    kontakt2.Wartosc = Dane["mail"];
+                                    kontakt2.Podstawowy = true;
+
+                                    //Dodawanie adresu Podmiotu
+                                    AdresPodmiotu adresPO = przedstawicielBO.DodajAdres();
+                                    adresPO.Szczegoly.Ulica = Adres["adres"] + " " + Adres["adres2"];
+                                    adresPO.Szczegoly.NrDomu = "";
+                                    adresPO.Szczegoly.KodPocztowy = Adres["kod"];
+                                    adresPO.Szczegoly.Miejscowosc = Adres["miasto"];
+                                    adresPO.Panstwo = panstwa.Dane.Wszystkie().Where(p => p.Nazwa.CompareTo("Polska") == 0).FirstOrDefault();
+                                        
+
+                                    if (!przedstawicielBO.Zapisz())
+                                    {
+                                        Console.WriteLine("Nie udało zapisać się podmiotu");
+                                        BladInfo[] bledy = sfera.PodajBledy(przedstawicielBO);
+                                        foreach (var blad in bledy)
+                                        {
+                                            Console.WriteLine("Ważność: {0}, Informacja: {1}",
+                                                blad.Waznosc.ToString(), blad.Tresc);
+                                        }
+                                    }  
+                                    else
+                                    {
+                                        przedstawiciel = przedstawicielBO.Dane;
+                                        Console.WriteLine("Zapisano przedstawicielBO");
+                                    }
+                                    klient = przedstawiciel;
+                                }
+                                zk.Dane.Podmiot = klient;
+                                zk.Dane.Uwagi =  uwagi + " \n" +
+                                    Dane["mail"] + " \n" +
+                                    Dane["telefon"];
+                                zk.Dane.DataWprowadzenia = DateTime.Now;
+                            }
+                            // if client found or created assign him to ZK document
+                            else
+                            {
+                                zk.Dane.Podmiot = klient;
+                                zk.Dane.Uwagi = uwagi + " \n" +
+                                    Dane["mail"] + " \n" +
+                                    Dane["telefon"];
+                                zk.Dane.DataWprowadzenia = DateTime.Now;
+                            }
+                        }
+                        else
+                        {
+                            // if client is a person NOT a company process is the same.
+                            var klient = podmioty.Dane.Wszystkie().Where(p => p.NIP == NIP).FirstOrDefault();
+                            // check if no client found
+                            if (klient == null)
+                            {
+                                IPodmioty pod = sfera.PodajObiektTypu<IPodmioty>();
+                                IPanstwa panstwa = sfera.PodajObiektTypu<IPanstwa>();
+                                IRodzajeKontaktuDaneDomyslne rodzajeKontaktuDD = sfera.PodajObiektTypu<IRodzajeKontaktu>().DaneDomyslne;
+                                IStanowiskaDaneDomyslne stanowiskaDD = sfera.PodajObiektTypu<IStanowiska>().DaneDomyslne;
+                                IDzialyPodmiotuDaneDomyslne dzialyDD = sfera.PodajObiektTypu<IDzialyPodmiotu>().DaneDomyslne;
+
+                                ITypyAdresowDaneDomyslne typyAdresuDD = sfera.PodajObiektTypu<ITypyAdresu>().DaneDomyslne;
+
+                                Podmiot przedstawiciel = null;
+                                using (IPodmiot przedstawicielBO = pod.UtworzOsobe())
+                                {
+                                    przedstawicielBO.Dane.Osoba.Imie = Dane["imie"];
+                                    przedstawicielBO.Dane.Osoba.Nazwisko = Dane["nazwisko"];
+
+                                    //Dodawanie adresu Podmiotu
+                                    AdresPodmiotu adresPO = przedstawicielBO.DodajAdres();
+                                    adresPO.Szczegoly.Ulica = Adres["adres"] + " " + Adres["adres2"];
+                                    adresPO.Szczegoly.KodPocztowy = Adres["kod"];
+                                    adresPO.Szczegoly.Miejscowosc = Adres["miasto"];
+                                    adresPO.Panstwo = panstwa.Dane.Wszystkie().Where(p => p.Nazwa.CompareTo("Polska") == 0).FirstOrDefault();
+
+                                    if (!przedstawicielBO.Zapisz())
+                                    {
+                                        Console.WriteLine("Nie udało zapisać się podmiotu");
+                                        BladInfo[] bledy = sfera.PodajBledy(przedstawicielBO);
+                                        foreach (var blad in bledy)
+                                        {
+                                            Console.WriteLine("Ważność: {0}, Informacja: {1}",
+                                                blad.Waznosc.ToString(), blad.Tresc);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        przedstawiciel = przedstawicielBO.Dane;
+                                        Console.WriteLine("Zapisano przedstawicielBO");
+                                    }
+                                    klient = przedstawiciel;
+                                }
+                                using (IPodmiot podmiotBO = podmioty.UtworzFirme())
+                                {
+                                    // podmiotBO.Dane.Gus
+                                    // creating company
+                                    int id = podmioty.Dane.Wszystkie().Select(a => a.Id).Max() + 1;
+                                    podmiotBO.Dane.Sygnatura.PelnaSygnatura = "KLIENT" + id.ToString();
+                                    podmiotBO.Dane.Firma.Nazwa = firma_nazwa;
+                                    podmiotBO.Dane.NIP = NIP;
+                                    podmiotBO.Dane.NazwaSkrocona = podmiotBO.Dane.Firma.Nazwa;
+
+                                    AdresPodmiotu adresFirmy = podmiotBO.DodajAdres();
+
+                                    adresFirmy.Szczegoly.Ulica = Firma["firma_adres"] + " " + Firma["firma_adres2"];
+                                    adresFirmy.Szczegoly.Miejscowosc = Firma["firma_miasto"];
+                                    adresFirmy.Szczegoly.KodPocztowy = Firma["firma_kod"];
+                                    adresFirmy.Panstwo = panstwa.Dane.Wszystkie().Where(p => p.Nazwa.CompareTo("Polska") == 0).FirstOrDefault();
+
+                                    Kontakt kontakt = new Kontakt();
+                                    podmiotBO.Dane.Kontakty.Add(kontakt);
+                                    kontakt.Rodzaj = rodzajeKontaktuDD.Telefon;
+                                    kontakt.Wartosc = Dane["telefon"];
+                                    kontakt.Podstawowy = true;
+
+                                    Kontakt kontakt2 = new Kontakt();
+                                    podmiotBO.Dane.Kontakty.Add(kontakt2);
+                                    kontakt2.Rodzaj = rodzajeKontaktuDD.Email;
+                                    kontakt2.Wartosc = Dane["mail"];
+                                    kontakt2.Podstawowy = true;
+
+                                    if (przedstawiciel != null)
+                                    {
+                                        Przedstawiciel p = podmiotBO.Przedstawiciele.Dodaj(przedstawiciel);
+                                        p.Stanowisko = stanowiskaDD.Zaopatrzeniowiec;
+                                        p.Dzial = dzialyDD.Zaopatrzenie;
+                                    }
+
+                                    if (!podmiotBO.Zapisz())
+                                    {
+                                        Console.WriteLine("Błąd zapisu podmiotu... \n");
+                                        BladInfo[] bledy = sfera.PodajBledy(podmiotBO);
+                                        foreach (var blad in bledy)
+                                        {
+                                            Console.WriteLine("Ważność: {0}, Informacja: {1}",
+                                                blad.Waznosc.ToString(), blad.Tresc);
+                                        }
+
+                                    }
+                                }
+                                // if company assign to the ZK document
+                                zk.Dane.Podmiot = podmioty.Dane.Wszystkie().Where(p => p.NIP == NIP).FirstOrDefault();
+                                // Adding order details
+                                zk.Dane.Uwagi = uwagi + " \n" +
+                                    Dane["mail"] + " \n" +
+                                    Dane["telefon"];
+                                // Date of adding is filled
+                                zk.Dane.DataWprowadzenia = DateTime.Now;
+                            }
+                            else
+                            {
+                                // same as company above.
+                                zk.Dane.Podmiot = klient;
+                                zk.Dane.Uwagi = uwagi + " \n" +
+                                    Dane["mail"] + " \n" +
+                                    Dane["telefon"];
+
+                                zk.Dane.DataWprowadzenia = DateTime.Now;
+                            }
+
+
+                        }
+                           
+                        // Adding products to the order 
+                        for (int i = 0; i < Pozycje["symbol"].Count; i++)
+                        {
+                            if(Pozycje["symbol"][i] != "" || Pozycje["symbol"][i] != null)
+                            {
+                                try
+                                {
+
+                                    var pozycja = Pozycje["symbol"][i];
+                                    // 
+                                    Asortyment a = asortyment.Dane.Wszystkie().Where(t => t.Symbol == pozycja).FirstOrDefault();
+                                    var poz = zk.Pozycje.Dodaj(a, Int32.Parse(Pozycje["ilosc"][i]), a.JednostkaSprzedazy);
+                                    poz.Cena.BruttoPrzedRabatem = Convert.ToDecimal(Pozycje["cena"][i].Replace(".", ","));
+                                    zk.Przelicz();
+                                }
+                                catch (NullReferenceException)
+                                {
+                                    Console.WriteLine(Pozycje["symbol"][i]);
+                                }
+                                    
+                            }
+
+                            //else
+                            //{
+                                //Asortyment a = new Asortyment();
+                                //  a.Nazwa = 
+                            //}
+                               
+                        }
+                        if (dostawa != null)
+                        {
+                            if (dostawa.Contains("DPD"))
+                            {
+                                Asortyment a = asortyment.Dane.Wszystkie().Where(t => t.Symbol == "DPD").FirstOrDefault();
+                                var poz = zk.Pozycje.Dodaj(a, 1, a.JednostkaSprzedazy);
+                                poz.Cena.BruttoPrzedRabatem = Convert.ToDecimal(kosztDostawy.Replace(".", ","));
+                                zk.Przelicz();
+                            }
+                            if (dostawa.Contains("paczkomacie"))
+                            {
+                                Asortyment a = asortyment.Dane.Wszystkie().Where(t => t.Symbol == "PACZ WYS").FirstOrDefault();
+                                var poz = zk.Pozycje.Dodaj(a, 1, a.JednostkaSprzedazy);
+                                poz.Cena.BruttoPrzedRabatem = Convert.ToDecimal(kosztDostawy.Replace(".", ","));
+                                zk.Przelicz();
+                            }
+                                
+                        }
+                        zk.Dane.TerminRealizacji = DateTime.Today;
+                        zk.Dane.WystawilaOsoba = podmioty.Dane.Wszystkie().Where(p => p.Osoba != null && p.NazwaSkrocona == "Dinar Dinar").FirstOrDefault().Osoba;
+                        //take a look inside
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                        
+                    if (zk.Zapisz())
+                    {
+                        Console.WriteLine(zk.Dane.NumerWewnetrzny.PelnaSygnatura);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Błędy:");
+                        BladInfo[] bledy = sfera.PodajBledy(zk);
+                        foreach (var blad in bledy)
+                        {
+                            Console.WriteLine("Ważność: {0}, Informacja: {1}",
+                                blad.Waznosc.ToString(), blad.Tresc);
+                        }
+
+
+                        Console.WriteLine(String.Join(Environment.NewLine, zk.Bledy.Select(b => b.ToString()).ToArray()));
+                    }
+                    Console.WriteLine("Błędy:");
+                    BladInfo[] bledy1 = sfera.PodajBledy(zk);
+                    foreach (var blad in bledy1)
+                    {
+                        Console.WriteLine("Ważność: {0}, Informacja: {1}",
+                            blad.Waznosc.ToString(), blad.Tresc);
+                    }
+                }
+            }
+
+            Console.WriteLine("Ending .... ");
+        }
+
+        public static void DodajKlienta()
+        {
+            using (var sfera = UruchomSfere())
+            {
+                IPodmioty podmioty = sfera.PodajObiektTypu<IPodmioty>();
+                IPanstwa panstwa = sfera.PodajObiektTypu<IPanstwa>();
+                IRodzajeKontaktuDaneDomyslne rodzajeKontaktuDD = sfera.PodajObiektTypu<IRodzajeKontaktu>().DaneDomyslne;
+                IStanowiskaDaneDomyslne stanowiskaDD = sfera.PodajObiektTypu<IStanowiska>().DaneDomyslne;
+                IDzialyPodmiotuDaneDomyslne dzialyDD = sfera.PodajObiektTypu<IDzialyPodmiotu>().DaneDomyslne;
+
+                ITypyAdresowDaneDomyslne typyAdresuDD = sfera.PodajObiektTypu<ITypyAdresu>().DaneDomyslne;
+
+                Podmiot przedstawiciel = null;
+                using (IPodmiot przedstawicielBO = podmioty.UtworzOsobe())
+                {
+                    przedstawicielBO.Dane.Osoba.Imie = "Zenon";
+                    przedstawicielBO.Dane.Osoba.Nazwisko = "Fijałkowski";
+                    
+                    //Dodawanie adresu Podmiotu
+                    AdresPodmiotu adresPO= przedstawicielBO.DodajAdres();
+                    adresPO.Szczegoly.Ulica = "Cyprysowa";
+                    adresPO.Szczegoly.NrDomu = "42";
+                    adresPO.Szczegoly.KodPocztowy = "43-512";
+                    adresPO.Szczegoly.Miejscowosc = "Bestwina";
+                    adresPO.Panstwo = panstwa.Dane.Wszystkie().Where(p => p.Nazwa.CompareTo("Polska") == 0).FirstOrDefault();
+
+                    if (!przedstawicielBO.Zapisz())
+                        Console.WriteLine("Nie udało zapisać się podmiotu");
+                    else
+                    {
+                        przedstawiciel = przedstawicielBO.Dane;
+                        Console.WriteLine("Zapisano przedstawicielBO");
+                    }
+                        
+                }
+
+                using (IPodmiot podmiotBO = podmioty.UtworzFirme())
+                {
+                    // podmiotBO.Dane.Gus
+                    int id = podmioty.Dane.Wszystkie().Select(a => a.Id).Max() + 1;
+                    podmiotBO.Dane.Sygnatura.PelnaSygnatura = "KLIENT" + id.ToString();
+                    podmiotBO.Dane.Firma.Nazwa = "KLIENT" + id.ToString();
+                    podmiotBO.Dane.NIP = "1111111111";
+                    podmiotBO.Dane.NazwaSkrocona = podmiotBO.Dane.Firma.Nazwa;
+
+                    AdresPodmiotu adres = podmiotBO.DodajAdres();
+                    adres.Szczegoly.Ulica = "ul. Szkolna";
+                    adres.Szczegoly.NrDomu = "11";
+                    adres.Szczegoly.KodPocztowy = "55-100";
+                    adres.Szczegoly.Miejscowosc = "Trzebnica";
+                    adres.Panstwo = panstwa.Dane.Wszystkie().Where(p => p.Nazwa.CompareTo("Polska") == 0).FirstOrDefault();
+
+                    AdresPodmiotu adresK = podmiotBO.DodajAdres(typyAdresuDD.Korespondencyjny);
+                    adresK.Nazwa = "Prawnicy s.c.";
+                    adresK.Linia1 = "Green Tower p. 212";
+                    adresK.Linia2 = "Rynek 1";
+                    adresK.Linia3 = "55-100 Trzebnica";
+
+                    Kontakt kontakt = new Kontakt();
+                    podmiotBO.Dane.Kontakty.Add(kontakt);
+                    kontakt.Rodzaj = rodzajeKontaktuDD.Telefon;
+                    kontakt.Wartosc = "71 373 88 99";
+                    kontakt.Podstawowy = true;
+
+                    RachunekBankowy rachunek = new RachunekBankowy();
+                    podmiotBO.Dane.Rachunki.Add(rachunek);
+                    rachunek.Nazwa = "Główny rachunek w NASZ Bank";
+                    rachunek.Numer = "42 1234 5678 0000 0000 1234 5678";
+
+                    if (przedstawiciel != null)
+                    {
+                        Przedstawiciel p = podmiotBO.Przedstawiciele.Dodaj(przedstawiciel);
+                        p.Stanowisko = stanowiskaDD.Zaopatrzeniowiec;
+                        p.Dzial = dzialyDD.Zaopatrzenie;
+                    }
+
+                    if (!podmiotBO.Zapisz())
+                        Console.WriteLine("Błąd zapisu podmiotu... \n");
+                }
+            }
+
+        }
+
+        public static void EdytujKlienta()
+        {
+            try
+            {
+                using (var sfera = UruchomSfere())
+                {
+                    // TODO dodawnie klientow
+                    IZamowieniaOdKlientow mgr = sfera.PodajObiektTypu<IZamowieniaOdKlientow>();
+
+                    IKonfiguracje mgrKonf = sfera.PodajObiektTypu<IKonfiguracje>();
+                    var konf = mgrKonf.Dane.WszystkieOTypieDokumentu(TypDokumentu.ZamowienieOdKlienta).FirstOrDefault();
+
+                    using (var dokument = mgr.Utworz(konf))
+                    {
+                        if (dokument.Zapisz())
+                        {
+                            Console.WriteLine("Edytowano dane");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Dane NIE nie zostaly edytowane.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Wystapil blad" + ex.Message);
+            }
+            Console.WriteLine("Ending .... ");
+            Console.Read();
+        }
     }
 }
