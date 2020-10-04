@@ -414,7 +414,364 @@ namespace NexoTestApp
             return a;
         }
 
+        public static string getZamowienieSourceId(string zamowienieIdHashKey)
+        {
+            string recordSource = ""; string id = ""; string server_feedback = "";
+            string connString = conn_string;
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    SqlCommand cmd = new SqlCommand(query_id_zamowienia + zamowienieIdHashKey+"'", conn);
+                    conn.Open();
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    
+
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            recordSource = dr[0] as string ?? default(string);
+                            id = (dr[1] as int? ?? default(int)).ToString();
+                        }
+                    }
+
+                    server_feedback = recordSource + " " + id;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+            return server_feedback;
         }
 
+        public static Dictionary<string, Dictionary<string, List<string>>> getListPozycje()
+        {
+            string connString = conn_string;
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    Console.WriteLine(time_in_minutes);
+                    
+                    //define the SqlCommand object
+                    string query = "SELECT distinct a.ZamowienieIdHashKey, " +
+                                " b.PozycjaIdHashKey, " +
+		                        " c.OpakowanieIdHashKey, " +
+		                        " b.tytul, " +
+		                        " Last_value(c.symbol) over(PARTITION BY symbol order by symbol RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) as symbol, " +
+		                        " c.RecordSource, " +
+		                        " b.liczba, " +
+		                        " b.cena, " +
+		                        " a.LoadDate " +
+                                " FROM[Dinar].[raw].[LinkPozycjaZamowienieOpakowanie] as a, [Dinar].[raw].[SatPozycja] as b, [Dinar].[raw].[SatOpakowanie] as c" +
+                                " WHERE a.OpakowanieIdHashKey = c.OpakowanieIdHashKey and a.PozycjaIdHashKey = b.PozycjaIdHashKey and a.LoadDate > (Select DATEADD(mi, -" + time_in_minutes + ", GETDATE()))" +
+                                " group by a.ZamowienieIdHashKey, b.PozycjaIdHashKey, c.OpakowanieIdHashKey, b.tytul, c.symbol, c.RecordSource, b.liczba, b.cena, a.LoadDate" +
+                                " order by a.LoadDate desc ";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Wczytywanie Pozycji Zamowien Oraz Ilosci" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string ZamowienieIdHashKey, symbol, ilosc, RecordSource, cena;
+                    // double cena;
+                    Dictionary<string, Dictionary<string, List<string>>> temp = new Dictionary<string, Dictionary<string, List<string>>>();
+
+                    //check if there are records
+
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr[0] as string ?? default(string);
+                            symbol = dr[4] as string ?? default(string);
+                            cena = dr[7].ToString() as string ?? default(string);
+                            RecordSource = dr[5] as string ?? default(string);
+                            ilosc = (dr[6] as int? ?? default(int)).ToString();
+
+                            if (temp.ContainsKey(ZamowienieIdHashKey))
+                            {
+                                if (temp[ZamowienieIdHashKey].ContainsKey("symbol"))
+                                {
+                                    temp[ZamowienieIdHashKey]["symbol"].Add(symbol);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["symbol"] = new List<string>
+                                    {
+                                        symbol
+                                    };
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("ilosc"))
+                                {
+                                    temp[ZamowienieIdHashKey]["ilosc"].Add(ilosc);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["ilosc"] = new List<string>
+                                    {
+                                        ilosc
+                                    };
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("RecordSource"))
+                                {
+                                    temp[ZamowienieIdHashKey]["RecordSource"].Add(RecordSource);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["RecordSource"] = new List<string>
+                                    {
+                                        RecordSource
+                                    };
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("cena"))
+                                {
+                                    temp[ZamowienieIdHashKey]["cena"].Add(cena);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["cena"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["cena"].Add(cena);
+                                }
+                            }
+                            else
+                            {
+                                temp[ZamowienieIdHashKey] = new Dictionary<string, List<string>>();
+                                if (temp[ZamowienieIdHashKey].ContainsKey("symbol"))
+                                {
+                                    temp[ZamowienieIdHashKey]["symbol"].Add(symbol);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["symbol"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["symbol"].Add(symbol);
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("ilosc"))
+                                {
+                                    temp[ZamowienieIdHashKey]["ilosc"].Add(ilosc);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["ilosc"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["ilosc"].Add(ilosc);
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("RecordSource"))
+                                {
+                                    temp[ZamowienieIdHashKey]["RecordSource"].Add(RecordSource);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["RecordSource"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["RecordSource"].Add(RecordSource);
+                                }
+                                if (temp[ZamowienieIdHashKey].ContainsKey("cena"))
+                                {
+                                    temp[ZamowienieIdHashKey]["cena"].Add(cena);
+                                }
+                                else
+                                {
+                                    temp[ZamowienieIdHashKey]["cena"] = new List<string>();
+                                    temp[ZamowienieIdHashKey]["cena"].Add(cena);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("GetListPozycja exception");
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+            return new Dictionary<string, Dictionary<string, List<string>>>();
+        }
+
+        public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatPozycja()
+        {
+            //set the connection string
+            string connString = conn_string;
+            
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_pozycja, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...SatPozycja" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string PozycjaIdHashKey, tytul, RecordSource, cena, vat, cena_netto, PozycjaHashDiff;
+                    int liczba, ETL_RunId;
+                    decimal wartosc_vat;
+                    Dictionary<string, Dictionary<string, string>> temp = new Dictionary<string, Dictionary<string, string>>();
+
+                    //check if there are records
+
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            PozycjaIdHashKey = dr[0] as string ?? default(string);
+                            ETL_RunId = dr.GetInt32(1) as int? ?? default(int);
+                            RecordSource = dr[4] as string ?? default(string);
+                            liczba = dr.GetInt32(5) as int? ?? default(int);
+                            tytul = dr[6] as string ?? default(string);
+                            cena = dr[7] as string ?? default(string);
+                            vat = dr[8] as string ?? default(string);
+                            cena_netto = dr[9] as string ?? default(string);
+                            PozycjaHashDiff = dr[10] as string ?? default(string);
+                            wartosc_vat = dr.GetDecimal(11) as decimal? ?? default(decimal);
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+                            tempin["ETL_RunId"] = ETL_RunId.ToString();
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["Liczba"] = liczba.ToString();
+                            tempin["Tytul"] = tytul;
+                            tempin["Cena"] = cena;
+                            tempin["VAT"] = vat;
+                            tempin["Cena_Netto"] = cena_netto;
+                            tempin["PozycjaHashDiff"] = PozycjaHashDiff;
+                            tempin["Wartosc_vat"] = wartosc_vat.ToString();
+
+                            temp[PozycjaIdHashKey] = tempin;
+
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+            }
+            return null;
+
+        }
+
+        public static Dictionary<string, Dictionary<string, string>> PolaczZBazaSatZamowienieKlientDaneFirmy()
+        {
+            //set the connection string
+            string connString = conn_string;
+            try
+            {
+                //sql connection object
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    //define the SqlCommand object
+                    SqlCommand cmd = new SqlCommand(query_zamowienie_klient_dane_firmy, conn);
+
+                    //open connection
+                    conn.Open();
+
+                    //execute the SQLCommand
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // Console.WriteLine(Environment.NewLine + "Retrieving data from database...SatZamowienieKlientDaneFirmy" + Environment.NewLine);
+                    // Console.WriteLine("Retrieved records:");
+
+                    string ZamowienieIdHashKey, RecordSource, nip,  firma_nazwa, firma_imie, firma_nazwisko, firma_adres, firma_adres2, firma_kod, firma_miasto, firma_kraj, firma_telefon, firma_email, ZamowienieKlientDaneFirmyHashDiff;
+                    int ETL_RunId;
+
+                    Dictionary<string, Dictionary<string, string>> temp = new Dictionary<string, Dictionary<string, string>>();
+
+                    //check if there are records
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            ZamowienieIdHashKey = dr[0] as string ?? default(string); ;
+                            ETL_RunId = dr.GetInt32(1);
+                            RecordSource = dr[4] as string ?? default(string);
+                            nip = dr[5] as string ?? default(string);
+                            firma_nazwa = dr[6] as string ?? default(string);
+                            firma_imie = dr[7] as string ?? default(string);
+                            firma_nazwisko = dr[8] as string ?? default(string);
+                            firma_adres = dr[9] as string ?? default(string);
+                            firma_adres2 = dr[10] as string ?? default(string);
+                            firma_kod = dr[11] as string ?? default(string);
+                            firma_miasto = dr[12] as string ?? default(string);
+                            firma_kraj = dr[13] as string ?? default(string);
+                            firma_telefon = dr[14] as string ?? default(string);
+                            firma_email = dr[15] as string ?? default(string);
+                            ZamowienieKlientDaneFirmyHashDiff = dr[16] as string ?? default(string);
+                            Dictionary<string, string> tempin = new Dictionary<string, string>();
+                            tempin["ETL_RunId"] = ETL_RunId.ToString();
+                            tempin["RecordSource"] = RecordSource;
+                            tempin["NIP"] = nip;
+                            tempin["firma_nazwa"] = firma_nazwa;
+                            tempin["firma_imie"] = firma_imie;
+                            tempin["firma_nazwisko"] = firma_nazwisko;
+                            tempin["firma_adres"] = firma_adres;
+                            tempin["firma_adres2"] = firma_adres2;
+                            tempin["firma_kod"] = firma_kod;
+                            tempin["firma_miasto"] = firma_miasto;
+                            tempin["firma_kraj"] = firma_kraj;
+                            tempin["firma_telefon"] = firma_telefon;
+                            tempin["firma_email"] = firma_email;
+                            tempin["ZamowienieKlientDaneFirmyHashDiff"] = ZamowienieKlientDaneFirmyHashDiff;
+                            temp[ZamowienieIdHashKey] = tempin;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found.");
+                    }
+
+                    //close data reader
+                    dr.Close();
+
+                    //close connection
+                    conn.Close();
+                    return temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                //display error message
+                Console.WriteLine("Exception: " + ex.Message);
+                
+            }
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
     }
 }
