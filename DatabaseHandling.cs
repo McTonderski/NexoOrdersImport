@@ -1,4 +1,4 @@
-nameclass NexoTestApp
+namespace NexoTestApp
 {
     partial class Program
     {
