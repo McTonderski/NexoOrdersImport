@@ -1,3 +1,19 @@
+using InsERT.Moria.Asortymenty;
+using InsERT.Moria.Dokumenty.Logistyka;
+using InsERT.Moria.Klienci;
+using InsERT.Moria.ModelDanych;
+using InsERT.Moria.ModelOrganizacyjny;
+using InsERT.Moria.Sfera;
+using InsERT.Mox.Product;
+using InsERT.Mox.Validation;
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+
 namespace NexoTestApp
 {
     partial class Program
