@@ -1,4 +1,5 @@
 using InsERT.Moria.Asortymenty;
+using InsERT.Moria.BibliotekaDokumentow;
 using InsERT.Moria.Dokumenty.Logistyka;
 using InsERT.Moria.Klienci;
 using InsERT.Moria.ModelDanych;
@@ -790,34 +791,38 @@ namespace NexoTestApp
 
         public static void ZgodyMarketingowe()
         {
-            List<string> nazwyZgod = new List<string>();
-            nazwyZgod.Add("ZNOIPPKE"); // Otryzmywanie informacji przy pomocy komunikacji elektronicznej
-            nazwyZgod.Add("ZNONV"); // otrzymanie newslettera  vendero - nowości
-            nazwyZgod.Add("ZNPDO"); // Przetwarzanie Danych osobowych - 
-            nazwyZgod.Add("ZNPDWCM"); // Przetwarzanie danych w celach marketingowych - profilowanie 
-        
-            // https://forum.insert.com.pl/index.php?/topic/12895-cele-przetwarzania-a-sfera/&tab=comments#comment-85363
-            IObiektyBibliotekiDokumentow biblioteka = sfera.PodajObiektTypu<IObiektyBibliotekiDokumentow>();
-            IPodmioty podmioty = sfera.PodajObiektTypu<IPodmioty>();
-            ICelePrzetwarzania cele = sfera.PodajObiektTypu<ICelePrzetwarzania>();
-            var podmitoDoEdycji = podmioty.Dane.Wszystkie().Where(p => p.Id == pid).FirstOrDefault();                	
+            // Launching Sfera
+            using (var sfera = UruchomSfere())
+            {
+                List<string> nazwyZgod = new List<string>();
+                nazwyZgod.Add("ZNOIPPKE"); // Otryzmywanie informacji przy pomocy komunikacji elektronicznej
+                nazwyZgod.Add("ZNONV"); // otrzymanie newslettera  vendero - nowości
+                nazwyZgod.Add("ZNPDO"); // Przetwarzanie Danych osobowych - 
+                nazwyZgod.Add("ZNPDWCM"); // Przetwarzanie danych w celach marketingowych - profilowanie 
+            
+                // https://forum.insert.com.pl/index.php?/topic/12895-cele-przetwarzania-a-sfera/&tab=comments#comment-85363
+                IObiektyBibliotekiDokumentow biblioteka = sfera.PodajObiektTypu<IObiektyBibliotekiDokumentow>();
+                IPodmioty podmioty = sfera.PodajObiektTypu<IPodmioty>();
+                ICelePrzetwarzania cele = sfera.PodajObiektTypu<ICelePrzetwarzania>();
+                var podmiotDoEdycji = podmioty.Dane.Wszystkie().Where(p => p.Id == pid).FirstOrDefault();                	
 
-            if(podmitoDoEdycji == null) {}
-            else
-                {                  
-                using (IPodmiot podmiot = podmioty.Znajdz(podmitoDoEdycji))
-                {
-                // ustawienie zgody na określony cel
-                var cel1 = cele.Dane.Wszystkie().Where(c => c.NazwaSkrocona == "ZNPDO").FirstOrDefault();
-                var zgoda1 = podmiot.Dane.Zgody.Where(z => z.CelPrzetwarzaniaId == cel1.Id).FirstOrDefault();
-                if(zgoda1==null)
+                if(podmiotDoEdycji == null) {}
+                else
+                    {                  
+                    using (IPodmiot podmiot = podmioty.Znajdz(podmiotDoEdycji))
                     {
-                    zgoda1 = new Zgoda();
-                    podmiot.Dane.Zgody.Add(zgoda1);
-                    zgoda1.CelPrzetwarzania = cel1;
-                    }    
-                zgoda1.Status = 2;
-                podmiot.Zapisz();  
+                    // ustawienie zgody na określony cel
+                    var cel1 = cele.Dane.Wszystkie().Where(c => c.NazwaSkrocona == "ZNPDO").FirstOrDefault();
+                    var zgoda1 = podmiot.Dane.Zgody.Where(z => z.CelPrzetwarzaniaId == cel1.Id).FirstOrDefault();
+                    if(zgoda1==null)
+                        {
+                        zgoda1 = new Zgoda();
+                        podmiot.Dane.Zgody.Add(zgoda1);
+                        zgoda1.CelPrzetwarzania = cel1;
+                        }    
+                    zgoda1.Status = 2;
+                    podmiot.Zapisz();  
+                    }
                 }
             }
         }
